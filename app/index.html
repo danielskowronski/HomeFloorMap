@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>HomeFloorPlan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #fafafa;
+      }
+      svg {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+
+      .general-sensor-value-temp_inside {
+        font-size: 128px;
+        text-shadow: 4px 4px 4px black;
+      }
+      .general-sensor-value-temp_outside {
+        font-size: 128px;
+        text-shadow: 4px 4px 4px black;
+      }
+      .general-sensor-value-temp_sun {
+        font-size: 64px;
+        text-shadow: 2px 2px 2px black;
+      }
+      .general-sensor-value {
+        font-family: "Ubuntu Mono", monospace;
+        font-weight: bold;
+        pointer-events: none;
+        user-select: none;
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      id="floorplan"
+      viewBox="-150 -200 1150 1650"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <g id="viewport"></g>
+    </svg>
+
+    <script>
+      let sensorDefs = {};
+      const path = "../example_data/";
+      //const path="../../HomeFloorMapDATA/";
+      const sensorClasses = {
+        temp_inside: {
+          unit: "",
+          precision: 0,
+          length: 2,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([20, 22, 24, 26, 28])
+            .range([
+              "#0087bd",
+              "#009698",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+            ]),
+        },
+        temp_outside: {
+          /* TODO: take care of winter */ unit: "°C",
+          precision: 0,
+          length: 3,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([16, 20, 24, 26, 28, 30])
+            .range([
+              "#0087bd",
+              "#009698",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+            ]),
+        },
+        temp_sun: {
+          /* TODO: take care of winter */ unit: "°C",
+          precision: 0,
+          length: 3,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([18, 22, 26, 28, 30, 32])
+            .range([
+              "#0087bd",
+              "#009698",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+            ]),
+        },
+      };
+      function formatSensorValue(value, sensorClass) {
+        if (value == null) return "–--";
+        const { unit, precision, length } = sensorClasses[sensorClass];
+        return `${value.toFixed(precision).padStart(length, " ")}${unit}`;
+      }
+      function getSensorColor(value, sensorClass) {
+        if (value == null) return "#000000"; // Default color for unknown values
+        const scale = sensorClasses[sensorClass].colorScale;
+        return scale(value);
+      }
+
+      function mockHomeAssistantResponse() {
+        const data = {};
+        for (const k in sensorDefs) {
+          if (!sensorDefs.hasOwnProperty(k)) continue;
+          data[k] = +(5 + Math.random() * 20).toFixed(1);
+        }
+        return data;
+      }
+
+      const svg = d3.select("#floorplan");
+      const viewport = svg.select("#viewport");
+
+      d3.json(path + "/sensorDefs.json").then((data) => {
+        sensorDefs = data;
+        d3.xml(path + "/floorplan.svg")
+          .then((xml) => {
+            const imported = xml.documentElement.cloneNode(true);
+            imported.removeAttribute("width");
+            imported.removeAttribute("height");
+
+            Array.from(imported.childNodes).forEach((node) => {
+              if (node.nodeType === 1) {
+                viewport.node().appendChild(node.cloneNode(true));
+              }
+            });
+
+            const sensorsG = viewport.append("g").attr("class", "sensors");
+
+            const sensorGroups = sensorsG
+              .selectAll("g.sensor")
+              .data(Object.values(sensorDefs))
+              .enter()
+              .append("g")
+              .attr("class", (d) => "sensor general-sensor-value-" + d.class)
+              .attr("id", (d) => d.id)
+              .attr("transform", (d) => {
+                const [x, y] = d.coords;
+                return `translate(${x},${y})`;
+              })
+              .attr("data-sensor-id", (d) => d.data_id)
+              .attr("data-sensor-class", (d) => d.class);
+
+            sensorGroups
+              .append("text")
+              .attr("class", "general-sensor-value")
+              .attr("x", 0)
+              .attr("y", 0)
+              .text("…");
+
+            function refreshSensors() {
+              const data = mockHomeAssistantResponse();
+              sensorsG
+                .selectAll("g.sensor")
+                .data(Object.values(sensorDefs))
+                .select("text.general-sensor-value")
+                .text((d) => {
+                  return formatSensorValue(data[d.data_id], d.class);
+                })
+                .attr("fill", (d) => {
+                  return getSensorColor(data[d.data_id], d.class);
+                });
+            }
+            refreshSensors();
+            setInterval(refreshSensors, 1000);
+          })
+          .catch((err) => {
+            console.error("Error loading floorplan.svg:", err);
+          });
+      });
+
+      svg.call(
+        d3
+          .zoom()
+          .scaleExtent([1, 4])
+          .on("zoom", ({ transform }) => {
+            viewport.attr("transform", transform);
+          })
+      );
+    </script>
+  </body>
+</html>
