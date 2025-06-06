@@ -5,11 +5,13 @@ MVP:
 - [x] render floor plan
 - [x] basic temperature sensors (always shown, single value)
 - [x] temperature thresholds coloring
+- [x] requesting HomeAssistant for actual data
 - [ ] window open/closed status 
 - [ ] window shades open/closed/percentage status
 - [ ] window open + shades coupled with temperature highlights
 - [ ] wind speed and direction
 - [ ] CO2 sensors
+- [ ] thermal color thresholds to be configurable
 
 further development:
 
@@ -17,6 +19,7 @@ further development:
 - [ ] lux and UV sensors
 - [ ] sun azimuth and elevation
 - [ ] rain gauge
+- [ ] link to graphs
 
 later:
 

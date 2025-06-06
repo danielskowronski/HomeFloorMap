@@ -47,7 +47,7 @@
   <body>
     <svg
       id="floorplan"
-      viewBox="-150 -200 1150 1650"
+      viewBox="-150 -200 1150 2000"
       preserveAspectRatio="xMidYMid meet"
     >
       <g id="viewport"></g>
@@ -55,8 +55,8 @@
 
     <script>
       let sensorDefs = {};
-      const path = "../example_data/";
-      //const path="../../HomeFloorMapDATA/";
+      //const path = "../example_data/";
+      const path="../../HomeFloorMapDATA/";
       const sensorClasses = {
         temp_inside: {
           unit: "",
@@ -117,7 +117,6 @@
         const scale = sensorClasses[sensorClass].colorScale;
         return scale(value);
       }
-
       function mockHomeAssistantResponse() {
         const data = {};
         for (const k in sensorDefs) {
@@ -127,12 +126,14 @@
         return data;
       }
 
+      
+
       const svg = d3.select("#floorplan");
       const viewport = svg.select("#viewport");
 
-      d3.json(path + "/sensorDefs.json").then((data) => {
+      d3.json("/sensorDefs.json").then((data) => {
         sensorDefs = data;
-        d3.xml(path + "/floorplan.svg")
+        d3.xml("/floorplan.svg")
           .then((xml) => {
             const imported = xml.documentElement.cloneNode(true);
             imported.removeAttribute("width");
@@ -167,21 +168,24 @@
               .attr("y", 0)
               .text("…");
 
-            function refreshSensors() {
-              const data = mockHomeAssistantResponse();
-              sensorsG
-                .selectAll("g.sensor")
-                .data(Object.values(sensorDefs))
-                .select("text.general-sensor-value")
-                .text((d) => {
-                  return formatSensorValue(data[d.data_id], d.class);
-                })
-                .attr("fill", (d) => {
-                  return getSensorColor(data[d.data_id], d.class);
-                });
+            MOCK=false; // TODO: make it more configurable
+            async function refreshSensors() {
+              try {
+                const response = MOCK ? mockHomeAssistantResponse : await fetch('/sensorValues.json');
+                if (!response.ok) throw new Error(response.statusText);
+                const data = await response.json();
+                sensorsG
+                  .selectAll("g.sensor")
+                  .data(Object.values(sensorDefs))
+                  .select("text.general-sensor-value")
+                  .text(d => formatSensorValue(data[d.data_id], d.class))
+                  .attr("fill", d => getSensorColor(data[d.data_id], d.class));
+              } catch (e) {
+                console.error('Failed to fetch sensor data:', e);
+              }
             }
             refreshSensors();
-            setInterval(refreshSensors, 1000);
+            setInterval(refreshSensors, 60*1000);
           })
           .catch((err) => {
             console.error("Error loading floorplan.svg:", err);

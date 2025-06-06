@@ -1,0 +1,14 @@
+{{ {
+   'aaa':    (states('sensor.aaa') | float),
+   'bbb':    (states('sensor.bbb') | float),
+   'ccc':    (states('sensor.ccc') | float),
+   'ddd':    (states('sensor.ddd') | float),
+   'eee':    (states('sensor.eee') | float),
+   'fff':    (states('sensor.fff') | float),
+   'ggg':    (states('sensor.ggg') | float),
+   'hhh':    (states('sensor.hhh') | float),
+   'iii':    (states('sensor.iii') | float),
+   'jjj':    (states('sensor.jjj') | float),
+   'shade1': (state_attr('cover.shade1', 'current_position') | int),
+   'door1':  (states('binary_sensor.door1') | bool),
+} | tojson }}
