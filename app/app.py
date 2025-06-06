@@ -31,7 +31,7 @@ def sensorDefs():
 
 @app.route("/sensorValues.json")
 def proxy_sensors():
-    payload = {"template": ha_template, "variables": {}}
+    payload = {"template": Path(conf_path + "/sensorRequest.j2").read_text(), "variables": {}}
     headers = {
         "Authorization": f"Bearer {HA_TOKEN}",
         "Content-Type": "application/json",

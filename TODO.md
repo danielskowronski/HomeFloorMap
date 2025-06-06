@@ -6,15 +6,18 @@ MVP:
 - [x] basic temperature sensors (always shown, single value)
 - [x] temperature thresholds coloring
 - [x] requesting HomeAssistant for actual data
-- [ ] window open/closed status 
+- [x] CO2 sensors
+- [x] window open/closed status 
+- [x] support showing only one centered sensor per room when not enough space and actual positions of sensors with multiple values + multiple sensors when zoomed in
+- [ ] rotated sensors
 - [ ] window shades open/closed/percentage status
-- [ ] window open + shades coupled with temperature highlights
 - [ ] wind speed and direction
-- [ ] CO2 sensors
 - [ ] thermal color thresholds to be configurable
 
 further development:
 
+- [ ] window open + shades coupled with temperature highlights
+- [ ] complex sensors (multiple values in same point)
 - [ ] hightlight entire room if temperature is on special thresholds
 - [ ] lux and UV sensors
 - [ ] sun azimuth and elevation
@@ -23,7 +26,6 @@ further development:
 
 later:
 
-- [ ] support showing only one centered sensor per room when not enough space and actual positions of sensors with multiple values + multiple sensors when zoomed in
 - [ ] heaters (deactivated/heating/heated + target temperature)
 - [ ] smog sensors on floor
 - [ ] smog sensors outside (e.g. on street) + other data from GIOŚ

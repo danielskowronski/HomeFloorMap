@@ -1,12 +1,13 @@
 { 
-  "aaa": { "data_id": "aaa", "coords": [525, 775], "class":"temp_inside" },
-  "bbb": { "data_id": "bbb", "coords": [150, 775], "class":"temp_inside" }, 
-  "ccc": { "data_id": "ccc", "coords": [450, 1075], "class":"temp_outside" },
-  "ddd": { "data_id": "ddd", "coords": [-20, 1000], "class":"temp_sun" },
-  "eee": { "data_id": "eee", "coords": [100, 175], "class":"temp_inside" },
-  "fff": { "data_id": "fff", "coords": [600, 175], "class":"temp_inside" },
-  "ggg": { "data_id": "ggg", "coords": [900, 175], "class":"temp_inside" },
-  "hhh": { "data_id": "hhh", "coords": [25, 450], "class":"temp_inside" },
-  "iii": { "data_id": "iii", "coords": [700, 520], "class":"temp_inside" },
-  "jjj": { "data_id": "jjj", "coords": [0, -100], "class":"temp_outside" }
+  "aaa": { "type": "g", "data_id": "aaa", "coords": [525, 775], "class":"temp_inside" },
+  "bbb": { "type": "g", "data_id": "bbb", "coords": [150, 775], "class":"temp_inside" }, 
+  "ccc": { "type": "g", "data_id": "ccc", "coords": [450, 1075], "class":"temp_outside" },
+  "ddd": { "type": "g", "data_id": "ddd", "coords": [-20, 1000], "class":"temp_sun" },
+  "eee": { "type": "g", "data_id": "eee", "coords": [100, 175], "class":"temp_inside" },
+  "fff": { "type": "g", "data_id": "fff", "coords": [600, 175], "class":"temp_inside" },
+  "ggg": { "type": "g", "data_id": "ggg", "coords": [900, 175], "class":"temp_inside" },
+  "hhh": { "type": "g", "data_id": "hhh", "coords": [25, 450], "class":"temp_inside" },
+  "iii": { "type": "g", "data_id": "iii", "coords": [700, 520], "class":"temp_inside" },
+  "jj1": { "type": "g", "data_id": "jjj", "coords": [0, -100], "class":"temp_outside" },
+  "jj2": { "type": "d", "data_id": "jjj", "coords": [0, -100], "class":"temp_outside" }
 }

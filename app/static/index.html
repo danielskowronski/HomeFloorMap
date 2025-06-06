@@ -23,28 +23,64 @@
         display: block;
       }
 
-      .general-sensor-value-temp_inside {
+      .sensor-g.sensor-temp_inside {
         font-size: 128px;
         text-shadow: 4px 4px 4px black;
       }
-      .general-sensor-value-temp_outside {
+      .sensor-g.sensor-temp_outside {
         font-size: 128px;
         text-shadow: 4px 4px 4px black;
       }
-      .general-sensor-value-temp_sun {
+      .sensor-g.sensor-temp_sun {
         font-size: 64px;
         text-shadow: 2px 2px 2px black;
       }
-      .general-sensor-value {
+      .sensor-g.sensor-simple_window {
+        font-size: 52px;
+        text-shadow: 2px 2px 2px black;
+      }
+
+
+      .sensor-d.sensor-temp_inside {
+        font-size: 48px;
+        text-shadow: 2px 2px 2px black;
+      }
+      .sensor-d.sensor-temp_outside {
+        font-size: 48px;
+        text-shadow: 2px 2px 2px black;
+      }
+      .sensor-d.sensor-temp_sun {
+        font-size: 36px;
+        text-shadow: 1px 1px 1px black;
+      }
+      .sensor-d.sensor-co2 {
+        font-size: 36px;
+        text-shadow: 1px 1px 1px black;
+      }
+      .sensor-d.sensor-simple_window {
+        font-size: 52px;
+        text-shadow: 2px 2px 2px black;
+      }
+
+      .sensor-value {
         font-family: "Ubuntu Mono", monospace;
         font-weight: bold;
         pointer-events: none;
         user-select: none;
         white-space: pre;
       }
+
+      button {
+        font-family: "Ubuntu Mono", monospace;
+        font-weight: bold;
+        font-size: 32px;
+      }
     </style>
   </head>
   <body>
+  <button onclick="showGeneralSensors()">Show General Sensors</button>
+  <button onclick="showDetailedSensors()">Show Detailed Sensors</button>
+  <br />
     <svg
       id="floorplan"
       viewBox="-150 -200 1150 2000"
@@ -57,7 +93,7 @@
       let sensorDefs = {};
       //const path = "../example_data/";
       const path="../../HomeFloorMapDATA/";
-      const sensorClasses = {
+      const sensorClassesG = {
         temp_inside: {
           unit: "",
           precision: 0,
@@ -106,16 +142,106 @@
               "#ff0800",
             ]),
         },
+        simple_window: {
+        },
       };
-      function formatSensorValue(value, sensorClass) {
-        if (value == null) return "–--";
-        const { unit, precision, length } = sensorClasses[sensorClass];
-        return `${value.toFixed(precision).padStart(length, " ")}${unit}`;
+      const sensorClassesD = {
+        temp_inside: {
+          unit: "°C",
+          precision: 1,
+          length: 4,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([20, 22, 24, 26, 28])
+            .range([
+              "#0087bd",
+              "#009698",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+            ]),
+        },
+        temp_outside: {
+          /* TODO: take care of winter */
+          unit: "°C",
+          precision: 1,
+          length: 5,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([16, 20, 24, 26, 28, 30])
+            .range([
+              "#0087bd",
+              "#009698",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+            ]),
+        },
+        temp_sun: {
+          /* TODO: take care of winter */
+          unit: "°C",
+          precision: 1,
+          length: 5,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([18, 22, 26, 28, 30, 32])
+            .range([
+              "#0087bd",
+              "#009698",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+            ]),
+        },
+        simple_window: {
+        },
+        co2: {
+          unit: "ppm",
+          precision: 0,
+          length: 4,
+          colorScale: d3
+            .scaleThreshold()
+            .domain([450, 600, 800, 1000, 1200])
+            .range([
+              "#0087bd",
+              "#008000",
+              "#eed202",
+              "#ff4500",
+              "#ff0800",
+              "#ff0000",
+            ]),
+        },
+      };
+      // FIXME: sensorClass should be defined once and have internal split between general and detailed
+      // FIXME: sensorClass should have indicator if it's numerical value or boolean
+      function formatSensorValue(value, sensorClass, sensorType) {
+        if (sensorType == "g") sensorClasses=sensorClassesG;
+        else sensorClasses=sensorClassesD;
+        if (sensorClass === "simple_window") {
+          return value ? " OPEN " : "CLOSED";
+        }
+        else if (sensorClass === "temp_sun" || sensorClass === "temp_inside" || sensorClass === "temp_outside"|| sensorClass === "co2") {
+          if (value == null) return "–--";
+          const { unit, precision, length } = sensorClasses[sensorClass];
+          return `${value.toFixed(precision).padStart(length, " ")}${unit}`;
+        }
       }
-      function getSensorColor(value, sensorClass) {
-        if (value == null) return "#000000"; // Default color for unknown values
-        const scale = sensorClasses[sensorClass].colorScale;
-        return scale(value);
+      function getSensorColor(value, sensorClass, sensorType) {
+        if (sensorType == "g") sensorClasses=sensorClassesG;
+        else sensorClasses=sensorClassesD;
+        if (sensorClass === "simple_window") {
+          if (value===true) return "#ff4500";
+          if (value===false) return "#008000";
+          return "#000000";
+        }
+        else if (sensorClass === "temp_sun" || sensorClass === "temp_inside" || sensorClass === "temp_outside"|| sensorClass === "co2") {
+          if (value == null) return "#000000"; 
+          const { colorScale, precision }  = sensorClasses[sensorClass];
+          return colorScale(value.toFixed(precision));
+        }
       }
       function mockHomeAssistantResponse() {
         const data = {};
@@ -152,7 +278,7 @@
               .data(Object.values(sensorDefs))
               .enter()
               .append("g")
-              .attr("class", (d) => "sensor general-sensor-value-" + d.class)
+              .attr("class", (d) => "sensor sensor-"+d.type+" sensor-" + d.class)
               .attr("id", (d) => d.id)
               .attr("transform", (d) => {
                 const [x, y] = d.coords;
@@ -163,10 +289,13 @@
 
             sensorGroups
               .append("text")
-              .attr("class", "general-sensor-value")
+              .attr("class", "sensor-value")
               .attr("x", 0)
               .attr("y", 0)
               .text("…");
+            // FIXME: better way of handling initial group visibility
+            showGeneralSensors();
+            //showDetailedSensors();
 
             MOCK=false; // TODO: make it more configurable
             async function refreshSensors() {
@@ -177,9 +306,9 @@
                 sensorsG
                   .selectAll("g.sensor")
                   .data(Object.values(sensorDefs))
-                  .select("text.general-sensor-value")
-                  .text(d => formatSensorValue(data[d.data_id], d.class))
-                  .attr("fill", d => getSensorColor(data[d.data_id], d.class));
+                  .select("text.sensor-value")
+                  .text(d => formatSensorValue(data[d.data_id], d.class, d.type))
+                  .attr("fill", d => getSensorColor(data[d.data_id], d.class, d.type));
               } catch (e) {
                 console.error('Failed to fetch sensor data:', e);
               }
@@ -192,12 +321,33 @@
           });
       });
 
+      function showDetailedSensors() {
+        d3.selectAll("g.sensor-g").attr("display", "none");
+        d3.selectAll("g.sensor-d").attr("display", null);
+      }
+      function showGeneralSensors() {
+        d3.selectAll("g.sensor-g").attr("display", null);
+        d3.selectAll("g.sensor-d").attr("display", "none");
+      }
+
+      showDetailedSensors();
+
       svg.call(
         d3
           .zoom()
-          .scaleExtent([1, 4])
+          .scaleExtent([1, 6])
           .on("zoom", ({ transform }) => {
             viewport.attr("transform", transform);
+            const k = transform.k;
+            const threshold = 2; // zoom scale threshold
+
+            if (k > threshold) {
+              // hide general sensors, show detailed
+              showDetailedSensors();
+            } else {
+              // show general sensors, hide detailed
+              showGeneralSensors();
+            }
           })
       );
     </script>
