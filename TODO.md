@@ -9,13 +9,20 @@ MVP:
 - [x] CO2 sensors
 - [x] window open/closed status 
 - [x] support showing only one centered sensor per room when not enough space and actual positions of sensors with multiple values + multiple sensors when zoomed in
-- [ ] rotated sensors
-- [ ] window shades open/closed/percentage status
-- [ ] wind speed and direction
-- [ ] thermal color thresholds to be configurable
+- [x] rotated sensors
+- [x] wind speed and direction
+- [x] sensors that are both detailed and general with same poisitions should be defined only once in sensorDefs
+- [ ] thermal color thresholds to be configurable + summer/winter switch
+- [x] sensor classes should be handled better with less repetition including threshold colors
+- [ ] make it fully offline (local cache of fonts, libraries)
+- [ ] better handling of detail level switching
+- [ ] docs on all sensor classes, updated example values with demo
 
 further development:
 
+- [ ] containerize
+- [ ] wind speed and direction as one sensor with 2 values
+- [x] window shades open/closed/percentage status
 - [ ] window open + shades coupled with temperature highlights
 - [ ] complex sensors (multiple values in same point)
 - [ ] hightlight entire room if temperature is on special thresholds
@@ -23,6 +30,8 @@ further development:
 - [ ] sun azimuth and elevation
 - [ ] rain gauge
 - [ ] link to graphs
+- [ ] improve handling of missing values
+- [ ] handle outdated values
 
 later:
 

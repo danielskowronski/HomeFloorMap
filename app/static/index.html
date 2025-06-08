@@ -5,10 +5,7 @@
     <title>HomeFloorPlan</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Ubuntu+Condensed&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="font/IosevkaTerm.css" rel="stylesheet" />
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
@@ -35,52 +32,81 @@
         font-size: 64px;
         text-shadow: 2px 2px 2px black;
       }
-      .sensor-g.sensor-simple_window {
-        font-size: 52px;
+      .sensor-g.sensor-wind_speed {
+        font-size: 64px;
+        text-shadow: 2px 2px 2px black;
+      }
+      .sensor-simple_window {
+        font-size: 48px;
         text-shadow: 2px 2px 2px black;
       }
 
-
       .sensor-d.sensor-temp_inside {
-        font-size: 48px;
+        font-size: 72px;
         text-shadow: 2px 2px 2px black;
       }
       .sensor-d.sensor-temp_outside {
-        font-size: 48px;
+        font-size: 72px;
         text-shadow: 2px 2px 2px black;
       }
       .sensor-d.sensor-temp_sun {
-        font-size: 36px;
+        font-size: 64px;
+        text-shadow: 1px 1px 1px black;
+      }
+      .sensor-d.sensor-wind_speed {
+        font-size: 64px;
         text-shadow: 1px 1px 1px black;
       }
       .sensor-d.sensor-co2 {
-        font-size: 36px;
+        font-size: 64px;
         text-shadow: 1px 1px 1px black;
       }
-      .sensor-d.sensor-simple_window {
-        font-size: 52px;
-        text-shadow: 2px 2px 2px black;
+
+      .sensor-wind_heading {
+        font-size: 300px;
       }
 
       .sensor-value {
-        font-family: "Ubuntu Mono", monospace;
+        font-family: "Iosevka Term Web", "Ubuntu Mono", monospace;
         font-weight: bold;
         pointer-events: none;
         user-select: none;
         white-space: pre;
       }
+      .sensor-value tspan.int {
+        font-size: 1em;
+      }
+      .sensor-value tspan.frac,
+      .sensor-value tspan.unit {
+        font-size: 0.6em;
+      }
+      .wind-arrow {
+        fill: currentColor;
+        stroke: none;
+      }
+
+      .shade-icon rect.shade-seg {
+        stroke: rgba(0, 0, 0, 0.75);
+        stroke-width: 1px;
+      }
+      .shade-icon rect.shade-seg-on {
+        fill: rgba(0, 0, 0, 0.33);
+      }
+      .shade-icon rect.shade-seg-off {
+        fill: none;
+      }
 
       button {
-        font-family: "Ubuntu Mono", monospace;
+        font-family: "Iosevka Term Web", "Ubuntu Mono", monospace;
         font-weight: bold;
         font-size: 32px;
       }
     </style>
   </head>
   <body>
-  <button onclick="showGeneralSensors()">Show General Sensors</button>
-  <button onclick="showDetailedSensors()">Show Detailed Sensors</button>
-  <br />
+    <button onclick="showGeneralSensors()">Show General Sensors</button>
+    <button onclick="showDetailedSensors()">Show Detailed Sensors</button>
+    <br />
     <svg
       id="floorplan"
       viewBox="-150 -200 1150 2000"
@@ -91,156 +117,186 @@
 
     <script>
       let sensorDefs = {};
-      //const path = "../example_data/";
-      const path="../../HomeFloorMapDATA/";
-      const sensorClassesG = {
-        temp_inside: {
-          unit: "",
-          precision: 0,
-          length: 2,
-          colorScale: d3
-            .scaleThreshold()
-            .domain([20, 22, 24, 26, 28])
-            .range([
-              "#0087bd",
-              "#009698",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-            ]),
-        },
-        temp_outside: {
-          /* TODO: take care of winter */ unit: "°C",
-          precision: 0,
-          length: 3,
-          colorScale: d3
-            .scaleThreshold()
-            .domain([16, 20, 24, 26, 28, 30])
-            .range([
-              "#0087bd",
-              "#009698",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-            ]),
-        },
-        temp_sun: {
-          /* TODO: take care of winter */ unit: "°C",
-          precision: 0,
-          length: 3,
-          colorScale: d3
-            .scaleThreshold()
-            .domain([18, 22, 26, 28, 30, 32])
-            .range([
-              "#0087bd",
-              "#009698",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-            ]),
-        },
-        simple_window: {
-        },
+      let commonColorThresholdPallettes = {
+        sixColour1: [
+          "#0087bd",
+          "#009698",
+          "#008000",
+          "#f5c71a",
+          "#ff4500",
+          "#ff0800",
+        ],
+        fiveColorCO2: [
+          /*"#0087bd",*/
+          "#0bda51",
+          "#f5c71a",
+          "#ff4500",
+          "#ff0800",
+          "#ff0000",
+        ],
       };
-      const sensorClassesD = {
+      let sensorClasses = {
+        wind_speed: {
+          render: "numerical",
+          baseVariant: {
+            unit: "km/h",
+            precision: 0,
+            length: 3,
+          },
+          colorScale: d3
+            .scaleThreshold()
+            .domain([5, 10, 15, 20, 25])
+            .range(commonColorThresholdPallettes.sixColour1),
+        },
         temp_inside: {
-          unit: "°C",
-          precision: 1,
-          length: 4,
+          render: "numerical",
+          baseVariant: {
+            unit: "",
+            precision: 0,
+            length: 2,
+          },
+          detailedVariant: {
+            unit: "°C",
+            precision: 1,
+            length: 4,
+          },
           colorScale: d3
             .scaleThreshold()
             .domain([20, 22, 24, 26, 28])
-            .range([
-              "#0087bd",
-              "#009698",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-            ]),
+            .range(commonColorThresholdPallettes.sixColour1),
         },
         temp_outside: {
-          /* TODO: take care of winter */
-          unit: "°C",
-          precision: 1,
-          length: 5,
+          render: "numerical",
+          baseVariant: {
+            unit: "°C",
+            precision: 0,
+            length: 3,
+          },
+          detailedVariant: {
+            unit: "°C",
+            precision: 1,
+            length: 5,
+          },
           colorScale: d3
             .scaleThreshold()
             .domain([16, 20, 24, 26, 28, 30])
-            .range([
-              "#0087bd",
-              "#009698",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-            ]),
+            .range(commonColorThresholdPallettes.sixColour1),
         },
         temp_sun: {
-          /* TODO: take care of winter */
-          unit: "°C",
-          precision: 1,
-          length: 5,
+          render: "numerical",
+          baseVariant: {
+            unit: "°C",
+            precision: 0,
+            length: 3,
+          },
+          detailedVariant: {
+            unit: "°C",
+            precision: 1,
+            length: 5,
+          },
           colorScale: d3
             .scaleThreshold()
             .domain([18, 22, 26, 28, 30, 32])
-            .range([
-              "#0087bd",
-              "#009698",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-            ]),
+            .range(commonColorThresholdPallettes.sixColour1),
         },
         simple_window: {
+          render: "boolean_text",
+          baseVariant: {
+            valueTrue: " OPEN ",
+            valueFalse: " SHUT ",
+          },
+          colorScale: ["#ff0800", "#008000"],
+        },
+        wind_heading: {
+          render: "special",
+          baseVariant: {
+            text: "↑",
+          },
         },
         co2: {
-          unit: "ppm",
-          precision: 0,
-          length: 4,
+          render: "numerical",
+          dividedBy: 100,
+          baseVariant: {
+            unit: "ppm",
+            precision: 2,
+            length: 4,
+          },
           colorScale: d3
             .scaleThreshold()
-            .domain([450, 600, 800, 1000, 1200])
-            .range([
-              "#0087bd",
-              "#008000",
-              "#eed202",
-              "#ff4500",
-              "#ff0800",
-              "#ff0000",
-            ]),
+            .domain([/*450,*/ 600, 800, 1000, 1200])
+            .range(commonColorThresholdPallettes.fiveColorCO2),
         },
       };
-      // FIXME: sensorClass should be defined once and have internal split between general and detailed
-      // FIXME: sensorClass should have indicator if it's numerical value or boolean
+
       function formatSensorValue(value, sensorClass, sensorType) {
-        if (sensorType == "g") sensorClasses=sensorClassesG;
-        else sensorClasses=sensorClassesD;
-        if (sensorClass === "simple_window") {
-          return value ? " OPEN " : "CLOSED";
+        sc = sensorClasses[sensorClass];
+        if (sc === undefined) {
+          console.warn(`Unknown sensor class: ${sensorClass}`);
+          return "–--";
         }
-        else if (sensorClass === "temp_sun" || sensorClass === "temp_inside" || sensorClass === "temp_outside"|| sensorClass === "co2") {
-          if (value == null) return "–--";
-          const { unit, precision, length } = sensorClasses[sensorClass];
-          return `${value.toFixed(precision).padStart(length, " ")}${unit}`;
+
+        scv = sc.baseVariant;
+        if (sensorType == "d" && sc.detailedVariant) {
+          scv = sc.detailedVariant;
+        }
+
+        if (sc.render === "boolean_text") {
+          if (value === true) return scv.valueTrue || " TRUE ";
+          if (value === false) return scv.valueFalse || " FALSE";
+          return " ---- ";
+        } else if (sc.render === "numerical") {
+          if (value == null) return "–--"; // TODO: format should match proper value - maybe render as value=0 but replace 0 with -
+          fixed = value.toFixed(scv.precision);
+          if (sc.dividedBy !== undefined && sc.dividedBy !== null) {
+            fixed = (value / sc.dividedBy).toFixed(scv.precision);
+          }
+
+          [intPart, fracPartRaw] = fixed.split(".");
+          if (scv.precision > 0) {
+            frac = "." + fracPartRaw;
+          } else {
+            frac = "";
+          }
+          if (sc.dividedBy !== undefined && sc.dividedBy !== null) {
+            frac = "" + fracPartRaw;
+          }
+          intPadded = intPart.padStart(scv.length - frac.length, " "); // TODO: scv should have intPart length
+          return `<tspan class="int">${intPadded}</tspan><tspan class="frac">${frac}</tspan><tspan class="unit">${scv.unit}</tspan>`;
+        } else if (sensorClass === "special") {
+          return scv.text || "–--";
+        } else {
+          console.warn(
+            `Unknown render type for sensor class ${sensorClass}: ${sc.render}`
+          );
+          return "–--";
         }
       }
+
+      function getSensorRotate(value, sensorClass) {
+        // TODO: support mocking
+        if (sensorClass === "wind_heading") return `rotate(${value})`;
+        else return "";
+      }
       function getSensorColor(value, sensorClass, sensorType) {
-        if (sensorType == "g") sensorClasses=sensorClassesG;
-        else sensorClasses=sensorClassesD;
-        if (sensorClass === "simple_window") {
-          if (value===true) return "#ff4500";
-          if (value===false) return "#008000";
-          return "#000000";
+        sc = sensorClasses[sensorClass];
+        if (sc === undefined) {
+          console.warn(`Unknown sensor class: ${sensorClass}`);
+          return "–--";
         }
-        else if (sensorClass === "temp_sun" || sensorClass === "temp_inside" || sensorClass === "temp_outside"|| sensorClass === "co2") {
-          if (value == null) return "#000000"; 
-          const { colorScale, precision }  = sensorClasses[sensorClass];
+
+        if (sc.render === "boolean_text") {
+          return value ? sc.valueTrue || "#ff0800" : sc.valueFalse || "#008000";
+        } else if (sc.render === "numerical") {
+          if (value == null) return "#000000";
+          const { colorScale, precision } = sc;
           return colorScale(value.toFixed(precision));
+        } else if (sensorClass === "special") {
+          return "#000000"; // TODO: for wind_heading, it should be color based on wind_speed; maybe we need wind_heading to be wind_all with speed overlayed on top of arrow?
+        } else {
+          console.warn(
+            `Unknown render type for sensor class ${sensorClass}: ${sc.render}`
+          );
+          return "#000000";
         }
       }
       function mockHomeAssistantResponse() {
@@ -251,8 +307,6 @@
         }
         return data;
       }
-
-      
 
       const svg = d3.select("#floorplan");
       const viewport = svg.select("#viewport");
@@ -273,16 +327,38 @@
 
             const sensorsG = viewport.append("g").attr("class", "sensors");
 
+            const bigArrowD = `
+              M0,-120
+              L40,-60
+              L10,-60
+              L10,110
+              L20,120
+              L-20,120
+              L-10,110
+              L-10,-60
+              L-40,-60
+              Z
+            `.replace(/\s+/g, " ");
+            const windowSegmentCount = 5;
+
             const sensorGroups = sensorsG
               .selectAll("g.sensor")
               .data(Object.values(sensorDefs))
               .enter()
               .append("g")
-              .attr("class", (d) => "sensor sensor-"+d.type+" sensor-" + d.class)
+              .attr(
+                "class",
+                (d) =>
+                  "sensor sensor-" +
+                  d.class +
+                  (d.type == "d" || d.type == "b" ? " sensor-d" : "") +
+                  (d.type == "g" || d.type == "b" ? " sensor-g" : "")
+              )
               .attr("id", (d) => d.id)
               .attr("transform", (d) => {
                 const [x, y] = d.coords;
-                return `translate(${x},${y})`;
+                const rotate = d.rotate || 0;
+                return `translate(${x},${y}) rotate(${rotate})`;
               })
               .attr("data-sensor-id", (d) => d.data_id)
               .attr("data-sensor-class", (d) => d.class);
@@ -292,29 +368,105 @@
               .attr("class", "sensor-value")
               .attr("x", 0)
               .attr("y", 0)
+              .attr("text-anchor", (d) =>
+                d.class === "wind_heading" ? "middle" : null
+              )
+              .attr("dominant-baseline", (d) =>
+                d.class === "wind_heading" ? "middle" : null
+              )
               .text("…");
-            // FIXME: better way of handling initial group visibility
+            sensorGroups
+              .filter((d) => d.class === "wind_heading")
+              .select("text")
+              .remove();
+
+            sensorGroups
+              .filter((d) => d.class === "wind_heading")
+              .append("path")
+              .attr("class", "wind-arrow")
+              .attr("d", bigArrowD);
+
+            sensorGroups
+              .filter((d) => d.class === "shade_percentage")
+              .selectAll("text.sensor-value")
+              .remove();
+
+            sensorGroups
+              .filter((d) => d.class === "shade_percentage")
+              .append("g")
+              .attr("class", "shade-icon")
+              .each(function (d) {
+                const g = d3.select(this);
+                const segHeight = 40 / windowSegmentCount;
+                for (let i = 0; i < windowSegmentCount; i++) {
+                  h = i == 0 ? segHeight + 1 : segHeight;
+                  o = i == 0 ? 5 : 6;
+                  g.append("rect")
+                    .attr("class", "shade-seg shade-seg-off")
+                    .attr("x", -2)
+                    .attr("y", o + i * segHeight)
+                    .attr("width", 30)
+                    .attr("height", h); // first segment is a bit taller;
+                }
+              });
+            // FIXME: better way of handling initial group visibility - maybe cookie?
             showGeneralSensors();
             //showDetailedSensors();
 
-            MOCK=false; // TODO: make it more configurable
+            MOCK = false; // TODO: make it more configurable
             async function refreshSensors() {
               try {
-                const response = MOCK ? mockHomeAssistantResponse : await fetch('/sensorValues.json');
+                const response = MOCK
+                  ? mockHomeAssistantResponse
+                  : await fetch("/sensorValues.json");
                 if (!response.ok) throw new Error(response.statusText);
                 const data = await response.json();
                 sensorsG
                   .selectAll("g.sensor")
                   .data(Object.values(sensorDefs))
                   .select("text.sensor-value")
-                  .text(d => formatSensorValue(data[d.data_id], d.class, d.type))
-                  .attr("fill", d => getSensorColor(data[d.data_id], d.class, d.type));
+                  .html((d) =>
+                    formatSensorValue(data[d.data_id], d.class, d.type)
+                  )
+                  .attr("fill", (d) =>
+                    getSensorColor(data[d.data_id], d.class, d.type)
+                  );
+                sensorsG
+                  .selectAll("g.sensor")
+                  .data(Object.values(sensorDefs))
+                  .attr("transform", (d) => {
+                    const [x, y] = d.coords;
+                    if (d.class === "wind_heading") {
+                      const rot = getSensorRotate(data[d.data_id], d.class);
+                      const match = /rotate\((\d+)\)/.exec(rot);
+                      const angle = match ? Number(match[1]) : 0;
+                      return `translate(${x},${y}) rotate(${angle})`;
+                    } else {
+                      return `translate(${x},${y}) rotate(${d.rotate || 0})`;
+                    }
+                  });
+                sensorsG
+                  .selectAll("g.sensor")
+                  .filter((d) => d.class === "shade_percentage")
+                  .each(function (d) {
+                    const pct = 100 - data[d.data_id] || 0;
+                    const filled = Math.floor(pct / (100 / windowSegmentCount));
+                    d3.select(this)
+                      .selectAll("rect.shade-seg")
+                      .attr(
+                        "class",
+                        (segD, i) =>
+                          `shade-seg ${
+                            i < filled ? "shade-seg-on" : "shade-seg-off"
+                          }`
+                      );
+                  });
               } catch (e) {
-                console.error('Failed to fetch sensor data:', e);
+                console.error("Failed to fetch sensor data:", e);
               }
             }
             refreshSensors();
-            setInterval(refreshSensors, 60*1000);
+            setInterval(refreshSensors, 60 * 1000);
           })
           .catch((err) => {
             console.error("Error loading floorplan.svg:", err);
@@ -326,8 +478,8 @@
         d3.selectAll("g.sensor-d").attr("display", null);
       }
       function showGeneralSensors() {
-        d3.selectAll("g.sensor-g").attr("display", null);
         d3.selectAll("g.sensor-d").attr("display", "none");
+        d3.selectAll("g.sensor-g").attr("display", null);
       }
 
       showDetailedSensors();
@@ -339,13 +491,11 @@
           .on("zoom", ({ transform }) => {
             viewport.attr("transform", transform);
             const k = transform.k;
-            const threshold = 2; // zoom scale threshold
+            const threshold = 2;
 
             if (k > threshold) {
-              // hide general sensors, show detailed
               showDetailedSensors();
             } else {
-              // show general sensors, hide detailed
               showGeneralSensors();
             }
           })
