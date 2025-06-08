@@ -1,3 +1,5 @@
 app/static/font/*.css
 app/static/font/TTF/*.ttf
 app/static/font/WOFF2/*.woff2
+app/static/vendor/*.js
+app/static/vendor/*.css

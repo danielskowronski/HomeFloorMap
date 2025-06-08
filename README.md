@@ -31,6 +31,13 @@ Dict of sensors with elements:
 
 Home Assistant template that renders into JSON dict with keys matching `data_id` and values.
 
+### Downloadign assets
+
+```bash
+./get_font.sh
+./get_vendor.sh
+```
+
 ### Env variables
 
 ```bash

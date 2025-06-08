@@ -14,8 +14,8 @@ MVP:
 - [x] sensors that are both detailed and general with same poisitions should be defined only once in sensorDefs
 - [ ] thermal color thresholds to be configurable + summer/winter switch
 - [x] sensor classes should be handled better with less repetition including threshold colors
-- [ ] make it fully offline (local cache of fonts, libraries)
-- [ ] better handling of detail level switching
+- [x] make it fully offline (local cache of fonts, libraries)
+- [x] better handling of detail level switching
 - [ ] docs on all sensor classes, updated example values with demo
 
 further development:

@@ -3,11 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>HomeFloorPlan</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="font/IosevkaTerm.css" rel="stylesheet" />
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="vendor/d3.v7.min.js"></script>
+    <script src="vendor/js.cookie.min.js"></script>
     <style>
       body {
         margin: 0;
@@ -96,17 +95,49 @@
         fill: none;
       }
 
+      html, body, h1 {
+        font-family: "Iosevka Term Web", "Ubuntu Mono", monospace;
+        font-weight: bold;
+
       button {
         font-family: "Iosevka Term Web", "Ubuntu Mono", monospace;
         font-weight: bold;
-        font-size: 32px;
+        font-size: 24px;
+      }
+
+      #title {
+        font-size: 48px;
+        text-shadow: 1px 1px 1px black;
+      }
+      #header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        height: 110px;
+        font-size: 28px;
+      }
+      #floorplan {
+        display: block;
+        width: 100%;
+        /*height: 100%;*/
+        margin-top: 125px; /* to avoid overlap with header */
       }
     </style>
   </head>
   <body>
-    <button onclick="showGeneralSensors()">Show General Sensors</button>
-    <button onclick="showDetailedSensors()">Show Detailed Sensors</button>
-    <br />
+    <div id="header">
+      <span id="title">Home Floor Plan</span> <span id="last_updated"></span><br />
+      Detail level: 
+      <button onclick="setDisplay('auto')">AUTO</button>
+      <button onclick="setDisplay('general')">NORMAL</button>
+      <button onclick="setDisplay('detail')">HIGH</button>
+    </div>
+    <!-- TODO: viewBox should be dynamic based on source svg -->
     <svg
       id="floorplan"
       viewBox="-150 -200 1150 2000"
@@ -116,6 +147,26 @@
     </svg>
 
     <script>
+      function applyDisplayMode() {
+        const mode = Cookies.get('displayMode') || 'auto';
+        if (mode === 'general') {
+          showGeneralSensors();
+        } else if (mode === 'detail') {
+          showDetailedSensors();
+        } else {
+          const k = d3.zoomTransform(svg.node()).k;
+          if (k > 2) {
+            showDetailedSensors();
+          } else {
+            showGeneralSensors();
+          }
+        }
+      }
+      function setDisplay(mode) {
+        Cookies.set('displayMode', mode);
+        applyDisplayMode();
+      }
+
       let sensorDefs = {};
       let commonColorThresholdPallettes = {
         sixColour1: [
@@ -409,9 +460,8 @@
                     .attr("height", h); // first segment is a bit taller;
                 }
               });
-            // FIXME: better way of handling initial group visibility - maybe cookie?
-            showGeneralSensors();
-            //showDetailedSensors();
+
+            applyDisplayMode();
 
             MOCK = false; // TODO: make it more configurable
             async function refreshSensors() {
@@ -421,6 +471,15 @@
                   : await fetch("/sensorValues.json");
                 if (!response.ok) throw new Error(response.statusText);
                 const data = await response.json();
+                console.log(data);
+                if (data.last_updated) {
+                  d3.select("#last_updated").text(
+                    `Last updated: ${(data.last_updated)}`
+                  );
+                } else {
+                  d3.select("#last_updated").text("");
+                }
+
                 sensorsG
                   .selectAll("g.sensor")
                   .data(Object.values(sensorDefs))
@@ -466,7 +525,7 @@
               }
             }
             refreshSensors();
-            setInterval(refreshSensors, 60 * 1000);
+            setInterval(refreshSensors, 30 * 1000);
           })
           .catch((err) => {
             console.error("Error loading floorplan.svg:", err);
@@ -490,14 +549,7 @@
           .scaleExtent([1, 6])
           .on("zoom", ({ transform }) => {
             viewport.attr("transform", transform);
-            const k = transform.k;
-            const threshold = 2;
-
-            if (k > threshold) {
-              showDetailedSensors();
-            } else {
-              showGeneralSensors();
-            }
+            applyDisplayMode();
           })
       );
     </script>
