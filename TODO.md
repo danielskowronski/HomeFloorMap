@@ -20,7 +20,7 @@ MVP:
 
 further development:
 
-- [ ] containerize
+- [.] containerize
 - [ ] wind speed and direction as one sensor with 2 values
 - [x] window shades open/closed/percentage status
 - [ ] window open + shades coupled with temperature highlights

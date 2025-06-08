@@ -3,15 +3,13 @@ import requests
 from flask import Flask, jsonify, send_from_directory, abort
 from pathlib import Path
 
-conf_path = "../example_config/"
-conf_path = "../../HomeFloorMapDATA/"
+HA_BASE = os.environ.get("HFM_HA_URL")
+HA_TOKEN = os.environ.get("HFM_HA_TOKEN")
+CONF_PATH = os.environ.get("HFM_CONF_PATH", "../example_config/")
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
-ha_template = Path(conf_path + "/sensorRequest.j2").read_text()
-
-HA_BASE = os.environ.get("HFM_HA_URL")
-HA_TOKEN = os.environ.get("HFM_HA_TOKEN")
+ha_template = Path(CONF_PATH + "/sensorRequest.j2").read_text()
 
 
 @app.route("/")
@@ -21,17 +19,17 @@ def index():
 
 @app.route("/floorplan.svg")
 def floorplan():
-    return send_from_directory(conf_path, "floorplan.svg")
+    return send_from_directory(CONF_PATH, "floorplan.svg")
 
 
 @app.route("/sensorDefs.json")
 def sensorDefs():
-    return send_from_directory(conf_path, "sensorDefs.json")
+    return send_from_directory(CONF_PATH, "sensorDefs.json")
 
 
 @app.route("/sensorValues.json")
 def proxy_sensors():
-    payload = {"template": Path(conf_path + "/sensorRequest.j2").read_text(), "variables": {}}
+    payload = {"template": Path(CONF_PATH + "/sensorRequest.j2").read_text(), "variables": {}}
     headers = {
         "Authorization": f"Bearer {HA_TOKEN}",
         "Content-Type": "application/json",
