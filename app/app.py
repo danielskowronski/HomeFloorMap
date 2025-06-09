@@ -27,9 +27,17 @@ def sensorDefs():
     return send_from_directory(CONF_PATH, "sensorDefs.json")
 
 
+@app.route("/config.json")
+def config():
+    return send_from_directory(CONF_PATH, "config.json")
+
+
 @app.route("/sensorValues.json")
 def proxy_sensors():
-    payload = {"template": Path(CONF_PATH + "/sensorRequest.j2").read_text(), "variables": {}}
+    payload = {
+        "template": Path(CONF_PATH + "/sensorRequest.j2").read_text(),
+        "variables": {},
+    }
     headers = {
         "Authorization": f"Bearer {HA_TOKEN}",
         "Content-Type": "application/json",

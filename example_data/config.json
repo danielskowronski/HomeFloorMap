@@ -1,0 +1,50 @@
+{
+  "commonColorThresholdPallettes": {
+    "sixColour1": [
+      "#0087bd",
+      "#009698",
+      "#008000",
+      "#f5c71a",
+      "#ff4500",
+      "#ff0800"
+    ],
+    "fiveColorCO2": [
+      "#0bda51",
+      "#f5c71a",
+      "#ff4500",
+      "#ff0800",
+      "#ff0000"
+    ]
+  },
+  "sensorRender": {
+    "wind_speed": {
+      "thresholds": [5, 10, 15, 20, 25],
+      "colors": "sixColour1"
+    },
+    "temp_inside": {
+      "thresholds": [21, 23, 25, 26.5, 28],
+      "colors": "sixColour1"
+    },
+    "temp_outside": {
+      "thresholds": [16, 20, 24, 26, 28, 30],
+      "colors": "sixColour1"
+    },
+    "temp_outside_winter": {
+      "thresholds": [-10, -5, 0, 5, 10, 15],
+      "colors": "sixColour1"
+    },
+    "temp_sun": {
+      "thresholds": [8, 22, 26, 28, 30, 32],
+      "colors": "sixColour1"
+    },
+    "temp_sun_winter": {
+      "thresholds": [-8, -3, 2, 7, 12, 17],
+      "colors": "sixColour1"
+    },
+    "co2": {
+      "thresholds": [600, 800, 1000, 1200],
+      "colors": "fiveColorCO2"
+    }
+  }
+
+}

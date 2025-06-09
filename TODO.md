@@ -12,7 +12,7 @@ MVP:
 - [x] rotated sensors
 - [x] wind speed and direction
 - [x] sensors that are both detailed and general with same poisitions should be defined only once in sensorDefs
-- [ ] thermal color thresholds to be configurable + summer/winter switch
+- [x] thermal color thresholds to be configurable + summer/winter switch
 - [x] sensor classes should be handled better with less repetition including threshold colors
 - [x] make it fully offline (local cache of fonts, libraries)
 - [x] better handling of detail level switching

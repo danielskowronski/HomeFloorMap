@@ -169,6 +169,39 @@
         applyDisplayMode();
       }
 
+      async function loadConfig() {
+        try {
+          const response = await fetch('/config.json');
+          if (!response.ok) throw new Error(response.statusText);
+          window.config = await response.json();
+          for (const key in window.config["commonColorThresholdPallettes"]) {
+            commonColorThresholdPallettes[key] =
+              window.config["commonColorThresholdPallettes"][key];
+          }
+          for (const key in window.config["sensorRender"]) {
+            // TODO: support overriding more parameters
+            if (window.config["sensorRender"][key].hasOwnProperty("thresholds")){
+              sensorClasses[key] = {
+                ...sensorClasses[key],
+                colorScale: d3
+                  .scaleThreshold()
+                  .domain(
+                    window.config["sensorRender"][key].thresholds ||
+                      sensorClasses[key].colorScale.domain()
+                  )
+                  .range(
+                    window.config["commonColorThresholdPallettes"][window.config["sensorRender"][key].colors] ||
+                      sensorClasses[key].colorScale.range()
+                  ),
+              };
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load sensor definitions:', e);
+        }
+      }
+      loadConfig();
+
       let sensorDefs = {};
       let commonColorThresholdPallettes = {
         sixColour1: [
@@ -473,7 +506,6 @@
                   : await fetch("/sensorValues.json");
                 if (!response.ok) throw new Error(response.statusText);
                 const data = await response.json();
-                console.log(data);
                 if (data.last_updated) {
                   d3.select("#last_updated").text(
                     `Last updated: ${(data.last_updated)}`
