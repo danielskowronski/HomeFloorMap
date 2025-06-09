@@ -45,3 +45,11 @@ export HFM_HA_URL='http://192.168.0.2:8123'
 export HFM_HA_TOKEN='LongLivedToken'
 export HFM_CONF_PATH='../example_data/'
 ```
+
+---
+
+## Licences
+
+### Material Design Icons
+
+Licensed under Apache License 2.0
