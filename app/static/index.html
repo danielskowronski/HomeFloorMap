@@ -171,7 +171,7 @@
 
       async function loadConfig() {
         try {
-          const response = await fetch('/config.json');
+          const response = await fetch('/sensorsAppearance.json');
           if (!response.ok) throw new Error(response.statusText);
           window.config = await response.json();
           for (const key in window.config["commonColorThresholdPallettes"]) {
@@ -291,7 +291,10 @@
             valueTrue: " OPEN ",
             valueFalse: " SHUT ",
           },
-          colorScale: ["#ff0800", "#008000"],
+          colorScale: {
+            colorTrue: "#ff0800",
+            colorFalse: "#008000"
+          },
         },
         wind_heading: {
           render: "special",
@@ -370,12 +373,16 @@
           return "–--";
         }
 
+        scv = sc.baseVariant;
+        if (sensorType == "d" && sc.detailedVariant) {
+          scv = sc.detailedVariant;
+        }
+
         if (sc.render === "boolean_text") {
-          return value ? sc.valueTrue || "#ff0800" : sc.valueFalse || "#008000";
+          return value ? sc.colorScale.colorTrue || "#ff0800" : sc.colorScale.colorFalse || "#008000";
         } else if (sc.render === "numerical") {
           if (value == null) return "#000000";
-          const { colorScale, precision } = sc;
-          return colorScale(value.toFixed(precision));
+          return sc.colorScale(value.toFixed(scv.precision));
         } else if (sensorClass === "special") {
           return "#000000"; // TODO: for wind_heading, it should be color based on wind_speed; maybe we need wind_heading to be wind_all with speed overlayed on top of arrow?
         } else {
@@ -397,7 +404,7 @@
       const svg = d3.select("#floorplan");
       const viewport = svg.select("#viewport");
 
-      d3.json("/sensorDefs.json").then((data) => {
+      d3.json("/sensorsMapping.json").then((data) => {
         sensorDefs = data;
         d3.xml("/floorplan.svg")
           .then((xml) => {
@@ -503,7 +510,7 @@
               try {
                 const response = MOCK
                   ? mockHomeAssistantResponse
-                  : await fetch("/sensorValues.json");
+                  : await fetch("/sensorsValues.json");
                 if (!response.ok) throw new Error(response.statusText);
                 const data = await response.json();
                 if (data.last_updated) {

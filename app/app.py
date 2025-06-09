@@ -2,14 +2,12 @@ import os
 import requests
 from flask import Flask, jsonify, send_from_directory, abort
 from pathlib import Path
+from config import AppConfig, load_config
 
-HA_BASE = os.environ.get("HFM_HA_URL")
-HA_TOKEN = os.environ.get("HFM_HA_TOKEN")
 CONF_PATH = os.environ.get("HFM_CONF_PATH", "../example_config/")
 
+cfg = load_config(CONF_PATH + '/hfm.yaml')
 app = Flask(__name__, static_folder="static", static_url_path="")
-
-ha_template = Path(CONF_PATH + "/sensorRequest.j2").read_text()
 
 
 @app.route("/")
@@ -22,29 +20,29 @@ def floorplan():
     return send_from_directory(CONF_PATH, "floorplan.svg")
 
 
-@app.route("/sensorDefs.json")
+@app.route("/sensorsMapping.json")
 def sensorDefs():
-    return send_from_directory(CONF_PATH, "sensorDefs.json")
+    return send_from_directory(CONF_PATH, "sensorsMapping.json")
 
 
-@app.route("/config.json")
+@app.route("/sensorsAppearance.json")
 def config():
-    return send_from_directory(CONF_PATH, "config.json")
+    return send_from_directory(CONF_PATH, "sensorsAppearance.json")
 
 
-@app.route("/sensorValues.json")
+@app.route("/sensorsValues.json")
 def proxy_sensors():
     payload = {
-        "template": Path(CONF_PATH + "/sensorRequest.j2").read_text(),
+        "template": Path(CONF_PATH + "/sensorsRequest.j2").read_text(),
         "variables": {},
     }
     headers = {
-        "Authorization": f"Bearer {HA_TOKEN}",
+        "Authorization": f"Bearer {cfg.ha.token}",
         "Content-Type": "application/json",
     }
     try:
         resp = requests.post(
-            f"{HA_BASE}/api/template", json=payload, headers=headers, timeout=10
+            f"{cfg.ha.url}/api/template", json=payload, headers=headers, timeout=10
         )
         resp.raise_for_status()
     except requests.RequestException as e:
@@ -64,4 +62,4 @@ def proxy_sensors():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9002, debug=True)
+    app.run(host=cfg.server.host, port=cfg.server.port, debug=cfg.server.debug)

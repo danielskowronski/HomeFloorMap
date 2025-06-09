@@ -3,8 +3,6 @@ services:
   hfm:
     build: .
     environment:
-      - HFM_HA_URL=${HFM_HA_URL}
-      - HFM_HA_TOKEN=${HFM_HA_TOKEN}
       - HFM_CONF_PATH=/data/
     ports:
       - "9002:9002"
