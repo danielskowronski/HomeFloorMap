@@ -334,7 +334,7 @@
           if (value === false) return scv.valueFalse || " FALSE";
           return " ---- ";
         } else if (sc.render === "numerical") {
-          if (value == null) return "–--"; // TODO: format should match proper value - maybe render as value=0 but replace 0 with -
+          if (value == null || value<=-1000) return "–--"; // TODO: format should match proper value - maybe render as value=0 but replace 0 with -
           fixed = value.toFixed(scv.precision);
           if (sc.dividedBy !== undefined && sc.dividedBy !== null) {
             fixed = (value / sc.dividedBy).toFixed(scv.precision);
@@ -381,7 +381,7 @@
         if (sc.render === "boolean_text") {
           return value ? sc.colorScale.colorTrue || "#ff0800" : sc.colorScale.colorFalse || "#008000";
         } else if (sc.render === "numerical") {
-          if (value == null) return "#000000";
+          if (value == null || value<=-1000) return "#000000";
           return sc.colorScale(value.toFixed(scv.precision));
         } else if (sensorClass === "special") {
           return "#000000"; // TODO: for wind_heading, it should be color based on wind_speed; maybe we need wind_heading to be wind_all with speed overlayed on top of arrow?

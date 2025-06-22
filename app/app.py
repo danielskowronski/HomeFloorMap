@@ -46,7 +46,6 @@ def proxy_sensors():
         )
         resp.raise_for_status()
     except requests.RequestException as e:
-        breakpoint()
         print("Error proxying to Home Assistant:", e)
         return abort(
             502, description="Failed to fetch sensor data from Home Assistant."
