@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: hfm
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: HFM_CONF_PATH
+          value: /data/
+        ports:
+        - containerPort: 9002
+        volumeMounts:
+        - name: config-data
+          mountPath: /data
+      volumes:
+      - name: config-data
+        secret:
+          secretName: {{ .Values.existingSecretName }}
