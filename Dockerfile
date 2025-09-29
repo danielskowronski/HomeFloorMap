@@ -7,8 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN addgroup --system webgroup && adduser --system webuser --ingroup webgroup
 
 WORKDIR /app
-COPY ./app /app
-RUN chown -R webuser:webgroup /app
+COPY --chown=webuser:webgroup ./app /app
 RUN pip install --no-cache-dir -r requirements.txt
 USER webuser
 

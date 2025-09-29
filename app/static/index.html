@@ -6,6 +6,7 @@
     <link href="font/IosevkaTerm.css" rel="stylesheet" />
     <link rel="shortcut icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel=stylesheet href=https://cdn.materialdesignicons.com/7.4.47/css/materialdesignicons.min.css>
 
     <script src="vendor/d3.v7.min.js"></script>
     <script src="vendor/js.cookie.min.js"></script>
@@ -20,7 +21,24 @@
         height: 100vh;
         display: block;
       }
+      .radiator-frac{
+        font-family: monospace !important;
+        font-size: 36px;
+        baseline-shift: 0.15em;
+      }
+      text.mdi{
+        text-shadow: 0px 0px black !important;
+        font-weight: 400 !important;
+      }
 
+      .sensor-g.sensor-radiator {
+        font-size: 46px;
+        text-shadow: 2px 2px  black;
+      }
+      .sensor-g.sensor-rain {
+        font-size: 46px;
+        text-shadow: 2px 2px  black;
+      }
       .sensor-g.sensor-temp_inside {
         font-size: 128px;
         text-shadow: 2px 2px  black;
@@ -41,9 +59,21 @@
         font-size: 48px;
         text-shadow: 1px 1px black;
       }
+      .sensor-tristate_window {
+        font-size: 48px;
+        text-shadow: 1px 1px black;
+      }
 
       .sensor-d.sensor-temp_inside {
         font-size: 72px;
+        text-shadow: 1px 1px black;
+      }
+      .sensor-d.sensor-radiator {
+        font-size: 46px;
+        text-shadow: 1px 1px black;
+      }
+      .sensor-d.sensor-rain {
+        font-size: 46px;
         text-shadow: 1px 1px black;
       }
       .sensor-d.sensor-temp_outside {
@@ -206,7 +236,7 @@
       let commonColorThresholdPallettes = {
         sixColour1: [
           "#0087bd",
-          "#009698",
+          "#008b8b",
           "#008000",
           "#f5c71a",
           "#ff4500",
@@ -296,6 +326,36 @@
             colorFalse: "#008000"
           },
         },
+        radiator: {
+          render: "radiator",
+          baseVariant: {},
+          colorScale: {
+            off:     "#0087bd",
+            standby: "#008000",
+            heat:    "#ff0800",
+          }
+        },
+        rain: {
+          render: "rain",
+          baseVariant: {},
+          colorScale: {
+            dry: "#444444",
+            wet: "#0087bd",
+          }
+        },
+        tristate_window: {
+          render: "enum",
+          baseVariant: {
+            0: " SHUT ",
+            1: " OPEN ",
+            2: " OPEN ",
+          },
+          colorScale: {
+            0: "#008000",
+            1: "#ff9933",
+            2: "#ff0800",
+          },
+        },
         wind_heading: {
           render: "special",
           baseVariant: {
@@ -317,6 +377,48 @@
         },
       };
 
+      function addMultilineText(selection, text) {
+        const lines = text.split("\n");
+        lines.forEach((line, i) => {
+          selection.append("tspan")
+            .attr("x", 0)
+            .attr("dy", i === 0 ? 0 : "1.2em")
+            .text(line);
+        });
+      }
+
+
+      function formatValueHalves(value){
+        v=Math.round(value*10);
+        if (v%10<5) return Math.round(v/10)+'<tspan class="radiator-frac">/</tspan>';
+        else return Math.round(v/10 -1)+'<tspan class="radiator-frac">½</tspan>';
+      }
+      function formatValueQuarters(value){
+        v=Math.round(value*100);
+        p=""; if (value<10) p=" ";
+        if (v%100== 0) return p+Math.round(v/100)  +'<tspan class="radiator-frac">⁄</tspan>';
+        if (v%100==25) return p+Math.round(v/100)  +'<tspan class="radiator-frac">¼</tspan>';
+        if (v%100==50) return p+Math.round(v/100-1)+'<tspan class="radiator-frac">½</tspan>';
+        if (v%100==75) return p+Math.round(v/100-1)+'<tspan class="radiator-frac">¾</tspan>';
+      }
+      function parseRadiator(value){
+        if (value.off) {
+          icn='\u{F0AD8}';
+          state="off";
+        }
+        else {
+          if (value.target>value.current) {
+            icn='\u{F0438}';
+            state="heat";
+          }
+          else {
+            icn='\u{F0AD7}';
+            state="standby";
+          }
+        }
+        return {"state": state, "icn": icn, "current": value.current, "target": value.target}
+      }
+
       function formatSensorValue(value, sensorClass, sensorType) {
         sc = sensorClasses[sensorClass];
         if (sc === undefined) {
@@ -333,6 +435,8 @@
           if (value === true) return scv.valueTrue || " TRUE ";
           if (value === false) return scv.valueFalse || " FALSE";
           return " ---- ";
+        } else if (sc.render === "enum") {
+          return scv[value];
         } else if (sc.render === "numerical") {
           if (value == null || value<=-1000) return "–--"; // TODO: format should match proper value - maybe render as value=0 but replace 0 with -
           fixed = value.toFixed(scv.precision);
@@ -353,6 +457,14 @@
           return `<tspan class="int">${intPadded}</tspan><tspan class="frac">${frac}</tspan><tspan class="unit">${scv.unit}</tspan>`;
         } else if (sensorClass === "special") {
           return scv.text || "–--";
+        } else if (sensorClass === "radiator") {
+          return "  "+formatValueHalves(value.target);
+        } else if (sensorClass === "rain") {
+          //return (value>0 ? "☔" : "🌂")+ ""
+          return " "+(value.min15>0 ? "☔" : "🌂")+ " \n"+
+            "¼hr "+formatValueQuarters(value.min15)+"mm \n"+
+            "1hr "+formatValueQuarters(value.hour)+"mm \n"+
+            "day "+formatValueQuarters(value.day)+"mm";
         } else {
           console.warn(
             `Unknown render type for sensor class ${sensorClass}: ${sc.render}`
@@ -360,7 +472,17 @@
           return "–--";
         }
       }
+      function svgMultiline(raw, { x = 0, lineHeight = '1.2em' } = {}) {
+        if (raw == null) return "";
+        const s = String(raw);
 
+        if (!s.includes("\n")) return s;
+
+        const lines = s.split("\n");
+        return lines.map((line, i) =>
+          `<tspan x="${x}" dy="${i === 0 ? 0 : lineHeight}">${line}</tspan>`
+        ).join("");
+      }
       function getSensorRotate(value, sensorClass) {
         // TODO: support mocking
         if (sensorClass === "wind_heading") return `rotate(${value})`;
@@ -380,11 +502,20 @@
 
         if (sc.render === "boolean_text") {
           return value ? sc.colorScale.colorTrue || "#ff0800" : sc.colorScale.colorFalse || "#008000";
+        } else if (sc.render === "enum") {
+          return sc.colorScale[value];
         } else if (sc.render === "numerical") {
           if (value == null || value<=-1000) return "#000000";
           return sc.colorScale(value.toFixed(scv.precision));
         } else if (sensorClass === "special") {
           return "#000000"; // TODO: for wind_heading, it should be color based on wind_speed; maybe we need wind_heading to be wind_all with speed overlayed on top of arrow?
+        } else if (sensorClass === "radiator") {
+            rv=parseRadiator(value);
+            if (rv.state=="off") return sc.colorScale.off;
+            if (rv.state=="heat") return sc.colorScale.heat;
+            return sc.colorScale.standby;
+        } else if (sensorClass === "rain") {
+            if (value.min15>0) return sc.colorScale.wet; else return sc.colorScale.dry;
         } else {
           console.warn(
             `Unknown render type for sensor class ${sensorClass}: ${sc.render}`
@@ -485,6 +616,13 @@
               .remove();
 
             sensorGroups
+              .filter((d) => d.class === "radiator")
+              .append("text")
+              .attr("class", "mdi")
+              .attr("font-family", "Material Design Icons")
+              .text("󰫘");
+
+            sensorGroups
               .filter((d) => d.class === "shade_percentage")
               .append("g")
               .attr("class", "shade-icon")
@@ -527,7 +665,7 @@
                   .data(Object.values(sensorDefs))
                   .select("text.sensor-value")
                   .html((d) =>
-                    formatSensorValue(data[d.data_id], d.class, d.type)
+                    svgMultiline(formatSensorValue(data[d.data_id], d.class, d.type))
                   )
                   .attr("fill", (d) =>
                     getSensorColor(data[d.data_id], d.class, d.type)
@@ -560,6 +698,20 @@
                           `shade-seg ${
                             i < filled ? "shade-seg-on" : "shade-seg-off"
                           }`
+                      );
+                  });
+                sensorsG
+                  .selectAll("g.sensor")
+                  .filter((d) => d.class === "radiator")
+                  .each(function (d) {
+                    icn='\u{F0AD7}';
+                    if (data[d.data_id].off===true) icn='\u{F0AD8}';
+                    if (data[d.data_id].heat===true) icn='\u{F0438}';
+                    d3.select(this)
+                      .selectAll("text.mdi")
+                      .text((icn) =>parseRadiator(data[d.data_id]).icn)
+                      .attr("fill", (d) =>
+                        getSensorColor(data[d.data_id], d.class, d.type)
                       );
                   });
               } catch (e) {
