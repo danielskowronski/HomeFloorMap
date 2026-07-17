@@ -14,6 +14,14 @@ It's developed outside Lovelace (Home Assistant UI) for several reasons:
 - understand [sensors on frontend](./docs/sensors_frontend.md)
 - [use / deploy](./docs/deploy.md)
 
+### Build
+
+```bash
+docker build -t ghcr.io/danielskowronski/homefloormap:v0.4.0 .
+docker push ghcr.io/danielskowronski/homefloormap:v0.4.0
+# bump chart appversion
+```
+
 ---
 
 ## Licences

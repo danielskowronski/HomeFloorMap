@@ -3,4 +3,4 @@ apiVersion: v2
 name: homefloormap
 description: HomeFloorMap Helm Chart
 version: 0.2.0
-appVersion: "v0.2.0"
+appVersion: "v0.4.0"

@@ -8,6 +8,8 @@ services:
       - "9002:9002"
     volumes:
       - type: bind
-        source: ./data
+        source: ../HomeFloorMapDATA
         target: /data
+        bind:
+          create_host_path: false
     restart: unless-stopped

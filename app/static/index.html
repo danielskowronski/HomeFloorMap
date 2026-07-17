@@ -55,6 +55,14 @@
         font-size: 64px;
         text-shadow: 1px 1px black;
       }
+      .sensor-g.sensor-draught_speed {
+        font-size: 64px;
+        text-shadow: 1px 1px black;
+      }
+      .sensor-g.sensor-pm10 {
+        font-size: 64px;
+        text-shadow: 1px 1px black;
+      }
       .sensor-simple_window {
         font-size: 48px;
         text-shadow: 1px 1px black;
@@ -85,6 +93,14 @@
         text-shadow: 1px 1px black;
       }
       .sensor-d.sensor-wind_speed {
+        font-size: 64px;
+        text-shadow: 1px 1px black;
+      }
+      .sensor-d.sensor-draught_speed {
+        font-size: 64px;
+        text-shadow: 1px 1px black;
+      }
+      .sensor-d.sensor-pm10 {
         font-size: 64px;
         text-shadow: 1px 1px black;
       }
@@ -264,6 +280,30 @@
             .domain([5, 10, 15, 20, 25])
             .range(commonColorThresholdPallettes.sixColour1),
         },
+        draught_speed: {
+          render: "numerical",
+          baseVariant: {
+            unit: "km/h",
+            precision: 0,
+            length: 3,
+          },
+          colorScale: d3
+            .scaleThreshold()
+            .domain([0.72, 1.8, 3, 5, 7])
+            .range(commonColorThresholdPallettes.sixColour1),
+        },
+        pm10: {
+          render: "numerical",
+          baseVariant: {
+            unit: "µg/m³ PM10",
+            precision: 0,
+            length: 3,
+          },
+          colorScale: d3
+            .scaleThreshold()
+            .domain([50, 100, 150, 200, 250])
+            .range(commonColorThresholdPallettes.sixColour1),
+        },
         temp_inside: {
           render: "numerical",
           baseVariant: {
@@ -291,7 +331,7 @@
           detailedVariant: {
             unit: "°C",
             precision: 1,
-            length: 5,
+            length: 5, 
           },
           colorScale: d3
             .scaleThreshold()
@@ -402,6 +442,9 @@
         if (v%100==75) return p+Math.round(v/100-1)+'<tspan class="radiator-frac">¾</tspan>';
       }
       function parseRadiator(value){
+        if (!window.enableRadiator) {
+          return {"state": "disabled", "icn": "", "current": value.current, "target": value.target};
+        }
         if (value.off) {
           icn='\u{F0AD8}';
           state="off";
@@ -458,7 +501,11 @@
         } else if (sensorClass === "special") {
           return scv.text || "–--";
         } else if (sensorClass === "radiator") {
-          return "  "+formatValueHalves(value.target);
+          if (window.enableRadiator) {
+            return "  "+formatValueHalves(value.target);
+          } else {
+            return "";
+          }
         } else if (sensorClass === "rain") {
           //return (value>0 ? "☔" : "🌂")+ ""
           return " "+(value.min15>0 ? "☔" : "🌂")+ " \n"+
@@ -535,195 +582,198 @@
       const svg = d3.select("#floorplan");
       const viewport = svg.select("#viewport");
 
-      d3.json("/sensorsMapping.json").then((data) => {
-        sensorDefs = data;
-        d3.xml("/floorplan.svg")
-          .then((xml) => {
-            const imported = xml.documentElement.cloneNode(true);
-            imported.removeAttribute("width");
-            imported.removeAttribute("height");
+      d3.json("/settings.json").then((settings) => {
+        window.enableRadiator = settings.show_radiators===true;
+        d3.json("/sensorsMapping.json").then((data) => {
+          sensorDefs = data;
+          d3.xml("/floorplan.svg")
+            .then((xml) => {
+              const imported = xml.documentElement.cloneNode(true);
+              imported.removeAttribute("width");
+              imported.removeAttribute("height");
 
-            Array.from(imported.childNodes).forEach((node) => {
-              if (node.nodeType === 1) {
-                viewport.node().appendChild(node.cloneNode(true));
-              }
-            });
-
-            const sensorsG = viewport.append("g").attr("class", "sensors");
-
-            const bigArrowD = `
-              M0,-120
-              L40,-60
-              L10,-60
-              L10,110
-              L20,120
-              L-20,120
-              L-10,110
-              L-10,-60
-              L-40,-60
-              Z
-            `.replace(/\s+/g, " ");
-            const windowSegmentCount = 5;
-
-            const sensorGroups = sensorsG
-              .selectAll("g.sensor")
-              .data(Object.values(sensorDefs))
-              .enter()
-              .append("g")
-              .attr(
-                "class",
-                (d) =>
-                  "sensor sensor-" +
-                  d.class +
-                  (d.type == "d" || d.type == "b" ? " sensor-d" : "") +
-                  (d.type == "g" || d.type == "b" ? " sensor-g" : "")
-              )
-              .attr("id", (d) => d.id)
-              .attr("transform", (d) => {
-                const [x, y] = d.coords;
-                const rotate = d.rotate || 0;
-                return `translate(${x},${y}) rotate(${rotate})`;
-              })
-              .attr("data-sensor-id", (d) => d.data_id)
-              .attr("data-sensor-class", (d) => d.class);
-
-            sensorGroups
-              .append("text")
-              .attr("class", "sensor-value")
-              .attr("x", 0)
-              .attr("y", 0)
-              .attr("text-anchor", (d) =>
-                d.class === "wind_heading" ? "middle" : null
-              )
-              .attr("dominant-baseline", (d) =>
-                d.class === "wind_heading" ? "middle" : null
-              )
-              .text("…");
-            sensorGroups
-              .filter((d) => d.class === "wind_heading")
-              .select("text")
-              .remove();
-
-            sensorGroups
-              .filter((d) => d.class === "wind_heading")
-              .append("path")
-              .attr("class", "wind-arrow")
-              .attr("d", bigArrowD);
-
-            sensorGroups
-              .filter((d) => d.class === "shade_percentage")
-              .selectAll("text.sensor-value")
-              .remove();
-
-            sensorGroups
-              .filter((d) => d.class === "radiator")
-              .append("text")
-              .attr("class", "mdi")
-              .attr("font-family", "Material Design Icons")
-              .text("󰫘");
-
-            sensorGroups
-              .filter((d) => d.class === "shade_percentage")
-              .append("g")
-              .attr("class", "shade-icon")
-              .each(function (d) {
-                const g = d3.select(this);
-                const segHeight = 40 / windowSegmentCount;
-                for (let i = 0; i < windowSegmentCount; i++) {
-                  h = i == 0 ? segHeight + 1 : segHeight;
-                  o = i == 0 ? 5 : 6;
-                  g.append("rect")
-                    .attr("class", "shade-seg shade-seg-off")
-                    .attr("x", -2)
-                    .attr("y", o + i * segHeight)
-                    .attr("width", 30)
-                    .attr("height", h); // first segment is a bit taller;
+              Array.from(imported.childNodes).forEach((node) => {
+                if (node.nodeType === 1) {
+                  viewport.node().appendChild(node.cloneNode(true));
                 }
               });
 
-            applyDisplayMode();
+              const sensorsG = viewport.append("g").attr("class", "sensors");
 
-            MOCK = false; // TODO: make it more configurable
-            async function refreshSensors() {
-              try {
-                const response = MOCK
-                  ? mockHomeAssistantResponse
-                  : await fetch("/sensorsValues.json");
-                if (!response.ok) throw new Error(response.statusText);
-                const data = await response.json();
-                if (data.last_updated) {
-                  d3.select("#last_updated").text(
-                    `Last updated: ${(data.last_updated)}`
-                  );
-                } else {
-                  d3.select("#last_updated").text("");
+              const bigArrowD = `
+                M0,-120
+                L40,-60
+                L10,-60
+                L10,110
+                L20,120
+                L-20,120
+                L-10,110
+                L-10,-60
+                L-40,-60
+                Z
+              `.replace(/\s+/g, " ");
+              const windowSegmentCount = 5;
+
+              const sensorGroups = sensorsG
+                .selectAll("g.sensor")
+                .data(Object.values(sensorDefs))
+                .enter()
+                .append("g")
+                .attr(
+                  "class",
+                  (d) =>
+                    "sensor sensor-" +
+                    d.class +
+                    (d.type == "d" || d.type == "b" ? " sensor-d" : "") +
+                    (d.type == "g" || d.type == "b" ? " sensor-g" : "")
+                )
+                .attr("id", (d) => d.id)
+                .attr("transform", (d) => {
+                  const [x, y] = d.coords;
+                  const rotate = d.rotate || 0;
+                  return `translate(${x},${y}) rotate(${rotate})`;
+                })
+                .attr("data-sensor-id", (d) => d.data_id)
+                .attr("data-sensor-class", (d) => d.class);
+
+              sensorGroups
+                .append("text")
+                .attr("class", "sensor-value")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("text-anchor", (d) =>
+                  d.class === "wind_heading" ? "middle" : null
+                )
+                .attr("dominant-baseline", (d) =>
+                  d.class === "wind_heading" ? "middle" : null
+                )
+                .text("…");
+              sensorGroups
+                .filter((d) => d.class === "wind_heading")
+                .select("text")
+                .remove();
+
+              sensorGroups
+                .filter((d) => d.class === "wind_heading")
+                .append("path")
+                .attr("class", "wind-arrow")
+                .attr("d", bigArrowD);
+
+              sensorGroups
+                .filter((d) => d.class === "shade_percentage")
+                .selectAll("text.sensor-value")
+                .remove();
+
+              sensorGroups
+                .filter((d) => d.class === "radiator")
+                .append("text")
+                .attr("class", "mdi")
+                .attr("font-family", "Material Design Icons")
+                .text("󰫘");
+
+              sensorGroups
+                .filter((d) => d.class === "shade_percentage")
+                .append("g")
+                .attr("class", "shade-icon")
+                .each(function (d) {
+                  const g = d3.select(this);
+                  const segHeight = 40 / windowSegmentCount;
+                  for (let i = 0; i < windowSegmentCount; i++) {
+                    h = i == 0 ? segHeight + 1 : segHeight;
+                    o = i == 0 ? 5 : 6;
+                    g.append("rect")
+                      .attr("class", "shade-seg shade-seg-off")
+                      .attr("x", -2)
+                      .attr("y", o + i * segHeight)
+                      .attr("width", 30)
+                      .attr("height", h); // first segment is a bit taller;
+                  }
+                });
+
+              applyDisplayMode();
+
+              MOCK = false; // TODO: make it more configurable
+              async function refreshSensors() {
+                try {
+                  const response = MOCK
+                    ? mockHomeAssistantResponse
+                    : await fetch("/sensorsValues.json");
+                  if (!response.ok) throw new Error(response.statusText);
+                  const data = await response.json();
+                  if (data.last_updated) {
+                    d3.select("#last_updated").text(
+                      `Last updated: ${(data.last_updated)}`
+                    );
+                  } else {
+                    d3.select("#last_updated").text("");
+                  }
+
+
+                  sensorsG
+                    .selectAll("g.sensor")
+                    .data(Object.values(sensorDefs))
+                    .select("text.sensor-value")
+                    .html((d) =>
+                      svgMultiline(formatSensorValue(data[d.data_id], d.class, d.type))
+                    )
+                    .attr("fill", (d) =>
+                      getSensorColor(data[d.data_id], d.class, d.type)
+                    );
+                  sensorsG
+                    .selectAll("g.sensor")
+                    .data(Object.values(sensorDefs))
+                    .attr("transform", (d) => {
+                      const [x, y] = d.coords;
+                      if (d.class === "wind_heading") {
+                        const rot = getSensorRotate(data[d.data_id], d.class);
+                        const match = /rotate\((\d+)\)/.exec(rot);
+                        const angle = match ? Number(match[1]) : 0;
+                        return `translate(${x},${y}) rotate(${angle})`;
+                      } else {
+                        return `translate(${x},${y}) rotate(${d.rotate || 0})`;
+                      }
+                    });
+                  sensorsG
+                    .selectAll("g.sensor")
+                    .filter((d) => d.class === "shade_percentage")
+                    .each(function (d) {
+                      const pct = 100 - data[d.data_id] || 0;
+                      const filled = Math.floor(pct / (100 / windowSegmentCount));
+                      d3.select(this)
+                        .selectAll("rect.shade-seg")
+                        .attr(
+                          "class",
+                          (segD, i) =>
+                            `shade-seg ${
+                              i < filled ? "shade-seg-on" : "shade-seg-off"
+                            }`
+                        );
+                    });
+                  sensorsG
+                    .selectAll("g.sensor")
+                    .filter((d) => d.class === "radiator")
+                    .each(function (d) {
+                      icn='\u{F0AD7}';
+                      if (data[d.data_id].off===true) icn='\u{F0AD8}';
+                      if (data[d.data_id].heat===true) icn='\u{F0438}';
+                      d3.select(this)
+                        .selectAll("text.mdi")
+                        .text((icn) =>parseRadiator(data[d.data_id]).icn)
+                        .attr("fill", (d) =>
+                          getSensorColor(data[d.data_id], d.class, d.type)
+                        );
+                    });
+                } catch (e) {
+                  console.error("Failed to fetch sensor data:", e);
                 }
-
-
-                sensorsG
-                  .selectAll("g.sensor")
-                  .data(Object.values(sensorDefs))
-                  .select("text.sensor-value")
-                  .html((d) =>
-                    svgMultiline(formatSensorValue(data[d.data_id], d.class, d.type))
-                  )
-                  .attr("fill", (d) =>
-                    getSensorColor(data[d.data_id], d.class, d.type)
-                  );
-                sensorsG
-                  .selectAll("g.sensor")
-                  .data(Object.values(sensorDefs))
-                  .attr("transform", (d) => {
-                    const [x, y] = d.coords;
-                    if (d.class === "wind_heading") {
-                      const rot = getSensorRotate(data[d.data_id], d.class);
-                      const match = /rotate\((\d+)\)/.exec(rot);
-                      const angle = match ? Number(match[1]) : 0;
-                      return `translate(${x},${y}) rotate(${angle})`;
-                    } else {
-                      return `translate(${x},${y}) rotate(${d.rotate || 0})`;
-                    }
-                  });
-                sensorsG
-                  .selectAll("g.sensor")
-                  .filter((d) => d.class === "shade_percentage")
-                  .each(function (d) {
-                    const pct = 100 - data[d.data_id] || 0;
-                    const filled = Math.floor(pct / (100 / windowSegmentCount));
-                    d3.select(this)
-                      .selectAll("rect.shade-seg")
-                      .attr(
-                        "class",
-                        (segD, i) =>
-                          `shade-seg ${
-                            i < filled ? "shade-seg-on" : "shade-seg-off"
-                          }`
-                      );
-                  });
-                sensorsG
-                  .selectAll("g.sensor")
-                  .filter((d) => d.class === "radiator")
-                  .each(function (d) {
-                    icn='\u{F0AD7}';
-                    if (data[d.data_id].off===true) icn='\u{F0AD8}';
-                    if (data[d.data_id].heat===true) icn='\u{F0438}';
-                    d3.select(this)
-                      .selectAll("text.mdi")
-                      .text((icn) =>parseRadiator(data[d.data_id]).icn)
-                      .attr("fill", (d) =>
-                        getSensorColor(data[d.data_id], d.class, d.type)
-                      );
-                  });
-              } catch (e) {
-                console.error("Failed to fetch sensor data:", e);
               }
-            }
-            refreshSensors();
-            setInterval(refreshSensors, 30 * 1000);
-          })
-          .catch((err) => {
-            console.error("Error loading floorplan.svg:", err);
-          });
+              refreshSensors();
+              setInterval(refreshSensors, 30 * 1000);
+            })
+            .catch((err) => {
+              console.error("Error loading floorplan.svg:", err);
+            });
+        });
       });
 
       function showDetailedSensors() {

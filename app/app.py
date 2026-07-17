@@ -29,6 +29,10 @@ def sensorDefs():
 def config():
     return send_from_directory(CONF_PATH, "sensorsAppearance.json")
 
+@app.route("/settings.json")
+def settings():
+    return send_from_directory(CONF_PATH, "settings.json")
+
 
 def prom_results_parse(prom_results):
   results={}

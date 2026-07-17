@@ -32,11 +32,12 @@ further development:
 - [ ] link to graphs
 - [ ] improve handling of missing values
 - [ ] handle outdated values
+- [x] settings to enbale/disable radiators
 
 later:
 
-- [ ] heaters (deactivated/heating/heated + target temperature)
-- [ ] smog sensors on floor
+- [x] heaters (deactivated/heating/heated + target temperature)
+- [x] smog sensors on floor
 - [ ] smog sensors outside (e.g. on street) + other data from GIOŚ
 - [ ] forecast with all details like cloud coverage
 - [ ] subfloors / dedicated rooms - e.g. 3D printer
