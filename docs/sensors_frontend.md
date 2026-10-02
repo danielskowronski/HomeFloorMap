@@ -55,6 +55,10 @@ Various non-standard renderers, implemented directly in code.
 
 `numerical`; small text value of `temp_outside` but with adjusted scale for sensors that are not in shade
 
+### `humi_bedroom`
+
+`numerical`; whole-percent relative humidity displayed as `XX% RH`. Values below 45% are red, 45–<50% orange, 50–<55% yellow, 55–<60% green, and 60% or above blue.
+
 ### `simple_window`
 
 `boolean_text`; expects True for sensor reporting open state; should have same length of text for open and closed state

@@ -17,8 +17,8 @@ It's developed outside Lovelace (Home Assistant UI) for several reasons:
 ### Build
 
 ```bash
-docker build -t ghcr.io/danielskowronski/homefloormap:v0.4.0 .
-docker push ghcr.io/danielskowronski/homefloormap:v0.4.0
+docker build -t ghcr.io/danielskowronski/homefloormap:v0.5.0 .
+docker push ghcr.io/danielskowronski/homefloormap:v0.5.0
 # bump chart appversion
 ```
 

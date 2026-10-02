@@ -51,6 +51,10 @@
         font-size: 64px;
         text-shadow: 1px 1px black;
       }
+      .sensor-g.sensor-humi_bedroom {
+        font-size: 64px;
+        text-shadow: 1px 1px black;
+      }
       .sensor-g.sensor-wind_speed {
         font-size: 64px;
         text-shadow: 1px 1px black;
@@ -89,6 +93,10 @@
         text-shadow: 1px 1px black;
       }
       .sensor-d.sensor-temp_sun {
+        font-size: 64px;
+        text-shadow: 1px 1px black;
+      }
+      .sensor-d.sensor-humi_bedroom {
         font-size: 64px;
         text-shadow: 1px 1px black;
       }
@@ -266,6 +274,13 @@
           "#ff0800",
           "#ff0000",
         ],
+        fiveColorHumidity: [
+          "#ff0800",
+          "#ff4500",
+          "#f5c71a",
+          "#008000",
+          "#0087bd",
+        ],
       };
       let sensorClasses = {
         wind_speed: {
@@ -354,6 +369,18 @@
             .scaleThreshold()
             .domain([18, 22, 26, 28, 30, 32])
             .range(commonColorThresholdPallettes.sixColour1),
+        },
+        humi_bedroom: {
+          render: "numerical",
+          baseVariant: {
+            unit: "% RH",
+            precision: 0,
+            length: 2,
+          },
+          colorScale: d3
+            .scaleThreshold()
+            .domain([45, 50, 55, 60])
+            .range(commonColorThresholdPallettes.fiveColorHumidity),
         },
         simple_window: {
           render: "boolean_text",
